@@ -46,5 +46,5 @@ class RecordCreate(BaseModel):
 
 
 class RecordsListResponse(BaseModel):
-	data: list[RecordResponse]
-	data_count: int
+    records: list[RecordResponse]  # было data
+    records_count: int             # было data_count
