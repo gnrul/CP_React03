@@ -1,8 +1,8 @@
-import { useState, useEffect, forwardRef } from 'react'
-import { createFileRoute, createLink, redirect, type LinkComponent } from '@tanstack/react-router'
+import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 
 import apiClient from '#/api/client'
 import useQuery from '#/hooks/use-query'
+import useMutation from '#/hooks/use-mutation'
 
 type UserSearch = {
   username?: string
@@ -30,8 +30,6 @@ export const Route = createFileRoute('/')({
   component: Home
 })
 
-// TODO: добавлять фильтрацию в адрес
-
 type RecordItem = {
   id: string
   course: {
@@ -50,22 +48,9 @@ type RecordQueryParams = {
   authorId: string | null;
 }
 
-interface BaseRecordLinkProps extends React.TableHTMLAttributes<HTMLTableRowElement> { }
-
-const BaseRecordLink = forwardRef<HTMLTableRowElement, BaseRecordLinkProps>((props, ref) => {
-  return <tr ref={ref} {...props}></tr>
-})
-
-const CreatedRecordLink = createLink(BaseRecordLink)
-
-const RecordLink: LinkComponent<typeof BaseRecordLink> = (props) => {
-  // @ts-expect-error // TODO: narrow children types
-  return <CreatedRecordLink {...props} style={{ cursor: "pointer" }} />
-}
-
 function Home() {
   const { accessToken, username } = Route.useRouteContext()
-  const q = Route.useSearch()
+  const navigate = Route.useNavigate()
 
   const {
     data: records,
@@ -80,11 +65,12 @@ function Home() {
     }
   })
 
-  // const [search, setSearch] = useState<string | null>(q.username ?? null)
-
-  // useEffect(() => {
-  //   loadRecords()
-  // }, [search])
+  const { mutate: deleteRecord } = useMutation({
+    mutationFn: apiClient.records.delete,
+    onSuccess: () => {
+      window.location.reload()
+    }
+  })
 
   if (error) {
     return (
@@ -97,20 +83,15 @@ function Home() {
 
   return (
     <div className="p-8">
-      <nav>
-        <span>{username}</span>
+      <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <span>Пользователь: <strong>{username}</strong></span>
+        {/* @ts-expect-error */}
+        <Link to="/records/create" role="button" style={{ width: 'auto', padding: '0.5rem 1rem' }}>
+          + Создать заявку
+        </Link>
       </nav>
 
       <h1 className="text-4xl font-bold">FastAPI Integration</h1>
-
-      {/* <input
-        className="border"
-        type="text"
-        name="search"
-        placeholder='Поиск...'
-        value={search ?? ""}
-        onChange={e => setSearch(e.target.value)}
-      /> */}
 
       {isLoading ? (
         <div className="p-8">
@@ -124,25 +105,39 @@ function Home() {
               <td>№</td>
               <td>Курс</td>
               <td>Создан</td>
-              {/* <td>Пользователь</td> */}
+              <td>Действия</td>
             </tr>
           </thead>
           <tbody>
             {!records?.length
               ? (
                 <tr>
-                  <td colSpan={3}>Записей пока нет</td>
+                  <td colSpan={4}>Записей пока нет</td>
                 </tr>
               )
-              : records.map(({ id, course, created_at, author }) => (
-                <RecordLink to="/records/$id" params={{ id }} key={id}>
-                  <>
-                    <td>№ {id}</td>
-                    <td>{course.title}</td>
-                    {/* <td>{author.username}</td> */}
-                    <td>{created_at}</td>
-                  </>
-                </RecordLink>
+              : records.map(({ id, course, created_at }) => (
+                <tr 
+                  key={id} 
+                  onClick={() => navigate({ to: '/records/$id', params: { id } })}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td>№ {id}</td>
+                  <td>{course.title}</td>
+                  <td>{created_at}</td>
+                  <td>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm('Точно хотите удалить эту запись?')) {
+                          deleteRecord({ accessToken, recordId: id })
+                        }
+                      }}
+                      style={{ background: '#d9534f', border: 'none', padding: '4px 8px', color: '#fff', width: 'auto' }}
+                    >
+                      Удалить
+                    </button>
+                  </td>
+                </tr>
               ))
             }
           </tbody>

@@ -7,11 +7,10 @@ export const Route = createFileRoute('/login')({
   component: Login,
 })
 
-type LoginResultData = Promise<{
-  data: {
+type LoginResultData = {
+  
     access_token: string;
-  };
-}>
+}
 
 type LoginMutationParams = {
   username: string;
@@ -24,8 +23,8 @@ function Login() {
 
   const { data, error, isLoading, mutate } = useMutation<LoginResultData, LoginMutationParams>({
     mutationFn: apiClient.auth.login,
-    onSuccess: (result: Awaited<LoginResultData>) => {
-      setAccessToken(result.data.access_token)
+    onSuccess: (result: LoginResultData) => {
+      setAccessToken(result.access_token)
       navigate({ to: '/' })
     }
   })
