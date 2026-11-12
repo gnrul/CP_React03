@@ -119,7 +119,6 @@ const loginFn = async ({
             })
         });
 
-        // Если fetcher вернул данные напрямую
         const token = response?.access_token || response?.data?.access_token;
         
         if (!token) {
