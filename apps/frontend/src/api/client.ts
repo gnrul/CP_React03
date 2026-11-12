@@ -29,12 +29,9 @@ const allRecordsFn = async ({
         searchParams
     })
 
-    // Если бэкенд возвращает records/records_count, а схема ждет data/data_count, 
-    // приводим ответ к тому, что требует бэкенд-валидация:
     return {
         data: response?.data || response?.records || [],
         data_count: response?.data_count ?? response?.records_count ?? 0,
-        // Сохраняем и старые поля на всякий случай, если где-то еще используются:
         records: response?.records || response?.data || [],
         records_count: response?.records_count ?? response?.data_count ?? 0,
     }
@@ -131,7 +128,6 @@ const loginFn = async ({
         
         return { access_token: token };
     } catch (error: any) {
-        // Пробрасываем чистую ошибку, чтобы фронтенд её не ломал на property access
         throw new Error('Неверное имя пользователя или пароль');
     }
 }
